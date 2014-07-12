@@ -17,45 +17,67 @@ package net.sourceforge.hypo.inject.dependency;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.sourceforge.hypo.InjectionAware;
 import net.sourceforge.hypo.inject.Utils;
 
-import org.apache.log4j.Logger;
-
 /**
- * A Dependency implementation representing a Field.
+ * A Dependency implementation representing a java.lang.reflect.Field.
  */
 public class FieldDependency implements Dependency
 {
-   private static Logger log = Logger.getLogger( FieldDependency.class );
+   private static Logger log = Logger.getLogger( FieldDependency.class.getCanonicalName() );
    
    private Field field;
-   private String beanName = "";
+   private String name = "";
    
-   public FieldDependency( Field field, String beanName )
+   /**
+    * Constructor
+    * @param field a java.lang.reflect.Field that has been identified as a dependency
+    * @param name an optional name for the dependency
+    */
+   public FieldDependency( Field field, String name )
    {
       this.field = field;
       this.field.setAccessible( true );
-      if ( beanName != null )
-         this.beanName = beanName;
+      if ( name != null )
+         this.name = name;
    }   
 
+   /**
+    * @return the associated name
+    */
    public String getAssociatedName()
    {
-      return beanName;
+      return name;
    }
 
+   /**
+    * @return the Field itself
+    */
    public Member getMember()
    {
       return field;
    }
    
-   public Class getType()
+   /**
+    * @return the type of the Field
+    */
+   public Class<?> getType()
    {
       return field.getType();
    }
    
+   /**
+    * Use reflection to satisfy the Dependency for 'targetObject' by reflectively
+    * setting its field value to be 'toInject'
+    * 
+    * @param targetObject the Object whose dependency is being satisfied
+    * @param toInject an object of the appropriate type that is being injected
+    * to satisfy the dependency
+    */
    public void injectValue( Object targetObject, Object toInject )
    {
       try
@@ -65,8 +87,8 @@ public class FieldDependency implements Dependency
             ( (InjectionAware) toInject ).beforeInjection( targetObject, this );            
          }
          field.set( targetObject, toInject );
-         if ( log.isDebugEnabled() )
-            log.debug( "Set field " + this + " on [" + Utils.getName( targetObject ) + "] to value [" + toInject + "]." );
+         if ( log.isLoggable(Level.FINE) )
+            log.fine( "Set field " + this + " on [" + Utils.getName( targetObject ) + "] to value [" + toInject + "]." );
       }
       catch( Exception e )
       {
@@ -79,10 +101,10 @@ public class FieldDependency implements Dependency
       StringBuffer buff = new StringBuffer();
       buff.append( "[Field " );
       buff.append( field.getName() );
-      if ( beanName != null && beanName.length() > 0 )
+      if ( name != null && name.length() > 0 )
       {
          buff.append( " @\"" );
-         buff.append( beanName );
+         buff.append( name );
          buff.append( "\"" );
       }
       buff.append( ']' );

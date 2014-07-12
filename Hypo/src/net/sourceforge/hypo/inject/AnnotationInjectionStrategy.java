@@ -45,18 +45,18 @@ public class AnnotationInjectionStrategy extends AbstractInjectionStrategy
 	* @param obj An instance to consider for dependency injection
 	* @return a list of Dependencies that must be satisfied for this instance
 	*/
-	public List<Dependency> selectDependencies( Class clazz )
+	public List<Dependency> selectDependencies( Class<?> clazz )
 	{
-	   List<Dependency> list = Collections.EMPTY_LIST;
+	   List<Dependency> list = Collections.emptyList();
 
 	   Method[] methods = clazz.getDeclaredMethods();
 	   for ( Method method: methods )
 	   {  
 	      if ( isMethodEligible( method ) )
 	      {
-	    	 if ( list.equals( Collections.EMPTY_LIST ) )
+	    	 if ( list.isEmpty() )
 	    		 list = new ArrayList<Dependency>();
-	         list.add( createDependency( method, getNameForAnnotatedMember( method ) ) );
+	         list.add( createDependency( method.getParameterTypes()[0], getNameForAnnotatedMember( method ) ) );
 	      }
 	   }
 	   Field[] fields = clazz.getDeclaredFields();  
@@ -64,7 +64,7 @@ public class AnnotationInjectionStrategy extends AbstractInjectionStrategy
 	   {
 	      if ( isFieldEligible( field ) )
 	      {
-	         if ( list.equals( Collections.EMPTY_LIST ) )
+	         if ( list.isEmpty() )
 		        list = new ArrayList<Dependency>();
 	         list.add( createDependency( field, getNameForAnnotatedMember( field ) ) );
 	      }
@@ -101,6 +101,7 @@ public class AnnotationInjectionStrategy extends AbstractInjectionStrategy
     * @return A Class object for the given name
     * @throws RuntimeException if the Class object could not be created
     */
+   @SuppressWarnings("unchecked")
    private static Class<? extends Annotation> createClass( String name )
    {
       Class<? extends Annotation> retval = null;
@@ -127,7 +128,7 @@ public class AnnotationInjectionStrategy extends AbstractInjectionStrategy
       String retval = "";
       if ( ann != null )
       {
-         Class clazz = ann.getClass();
+         Class<?> clazz = ann.getClass();
          try
          {        	 
             Method meth = clazz.getDeclaredMethod( "value" );

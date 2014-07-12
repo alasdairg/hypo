@@ -35,5 +35,7 @@ public interface DependencyInjector
     */
    void ready();
    
+   void stop();
+   
    void inject( Object obj );
 }

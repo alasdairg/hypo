@@ -20,14 +20,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.sourceforge.hypo.inject.dependency.DefaultDependencyFactory;
 import net.sourceforge.hypo.inject.dependency.Dependency;
 import net.sourceforge.hypo.inject.dependency.DependencyFactory;
 import net.sourceforge.hypo.inject.resolver.DependencyResolver;
 import net.sourceforge.hypo.inject.resolver.NonResolver;
-
-import org.apache.log4j.Logger;
 
 
 /**
@@ -38,12 +38,12 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractInjectionStrategy implements InjectionStrategy
 {
-   private Logger log = Logger.getLogger( this.getClass() );
+   private Logger log = Logger.getLogger( this.getClass().getCanonicalName() );
    private DependencyResolver resolver = new NonResolver();
    private DependencyFactory dependencyFactory = new DefaultDependencyFactory();   
    private boolean useClassCaching = true;
-   private Map<Class, List<Dependency>> cachedDependencies = new HashMap<Class, List<Dependency>>();
-   private ThreadLocal<Set<Class>> cycleDetect = new ThreadLocal<Set<Class>>();
+   private Map<Class<?>, List<Dependency>> cachedDependencies = new HashMap<Class<?>, List<Dependency>>();
+   private ThreadLocal<Set<Class<?>>> cycleDetect = new ThreadLocal<Set<Class<?>>>();
    	
   /**
    * Determine if the specified object requires dependency injection, and if it does,
@@ -61,7 +61,7 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
    * injection, but not all of the identified dependencies could be resolved
    * @throws IllegalStateException if a cycle was detected trying to resolve dependencies for the object
    */
-   public final boolean performInjection( Object obj, Class clazz ) throws UnresolvedDependenciesException, IllegalStateException
+   public final boolean performInjection( Object obj, Class<?> clazz ) throws UnresolvedDependenciesException, IllegalStateException
    {
       boolean retval = false;
       try
@@ -72,8 +72,8 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
          if ( members != null && members.size() > 0 )
          {
             retval = true;
-            if ( log.isDebugEnabled() )
-               log.debug( "Started processing eligible object [" + Utils.getName( obj ) + "]. Class " + clazz.getName() );
+            if ( log.isLoggable(Level.FINE) )
+               log.fine( "Started processing eligible object [" + Utils.getName( obj ) + "]. Class " + clazz.getName() );
             Set<Dependency> unresolved = new HashSet<Dependency>( members );
             for ( Dependency member: members )
             {
@@ -85,14 +85,14 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
                throw new UnresolvedDependenciesException( obj, unresolved );
             else
             {
-               if ( log.isDebugEnabled() )
-                  log.debug( "Completed processing object [" + Utils.getName( obj ) + "]. Class " + clazz.getName() );
+               if ( log.isLoggable(Level.FINE) )
+                  log.fine( "Completed processing object [" + Utils.getName( obj ) + "]. Class " + clazz.getName() );
             }
          }
          else
          {
-        	if ( log.isDebugEnabled() )
-               log.debug( "Ignoring ineligible object [" + Utils.getName( obj ) + "]. Class " + clazz.getName() );
+        	if ( log.isLoggable(Level.FINE) )
+               log.fine( "Ignoring ineligible object [" + Utils.getName( obj ) + "]. Class " + clazz.getName() );
          }
       }
       finally
@@ -104,7 +104,7 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
    
    public final boolean performInjection( Object obj ) throws UnresolvedDependenciesException, IllegalStateException
    {
-      Class clazz = obj.getClass();
+      Class<?> clazz = obj.getClass();
       boolean retval = false;
       while ( clazz != Object.class )
       {
@@ -122,7 +122,7 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
     * @return a list of Dependencies. An empty list signifies that the instance is 
     * ineligible for dependency injection as far as this InjectionStrategy is concerned
     */
-   public abstract List<Dependency> selectDependencies( Class clazz );
+   public abstract List<Dependency> selectDependencies( Class<?> clazz );
    
    /**
     * Determines whether or not to cache the list of Dependencies returned
@@ -145,7 +145,7 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
     * and if present, a List of Dependencies is returned directly. Otherwise, this method 
     * returns the result of selectDependencies()
     */
-   private List<Dependency> getDependencies( Class clazz )
+   private List<Dependency> getDependencies( Class<?> clazz )
    {
       List<Dependency> retval = null;
       if ( useClassCaching )
@@ -201,14 +201,14 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
     * @param clazz the class of an instance that is having dependencies injected 
     * @throws IllegalStateException if there appear to be cyclical dependencies.
     */
-   private void register( Class clazz ) throws IllegalStateException
+   private void register( Class<?> clazz ) throws IllegalStateException
    {
 	   if ( cachedDependencies.containsKey( clazz ) )
 		   return;
-	   Set<Class> inProgress = cycleDetect.get();
+	   Set<Class<?>> inProgress = cycleDetect.get();
 	   if ( inProgress == null )
 	   {
-		   inProgress = new HashSet<Class>();
+		   inProgress = new HashSet<Class<?>>();
 		   cycleDetect.set( inProgress );
 	   }
 	   if ( inProgress.contains( clazz ) )
@@ -224,11 +224,11 @@ public abstract class AbstractInjectionStrategy implements InjectionStrategy
     * for an instance of this class.
     * @param clazz the class of an instance that has had dependencies injected
     */
-   private void unregister( Class clazz )
+   private void unregister( Class<?> clazz )
    {
 	   if ( cachedDependencies.containsKey( clazz ) )
 		   return;
-	   Set<Class> inProgress = cycleDetect.get();
+	   Set<Class<?>> inProgress = cycleDetect.get();
 	   if ( inProgress != null )
 	      inProgress.remove( clazz );
    }  

@@ -26,6 +26,7 @@ import net.sourceforge.hypo.inject.dependency.Dependency;
  */
 public class UnresolvedDependenciesException extends RuntimeException
 {	   
+   private static final long serialVersionUID = 1L;
    private Collection<Dependency> unresolvedDependencies;
    private Object culprit;
 	

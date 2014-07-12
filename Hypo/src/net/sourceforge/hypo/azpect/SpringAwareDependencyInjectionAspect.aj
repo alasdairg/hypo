@@ -17,8 +17,7 @@ package net.sourceforge.hypo.azpect;
 
 import org.springframework.beans.factory.InitializingBean;
 
-public aspect SpringAwareDependencyInjectionAspect extends AbstractDependencyInjectionAspect
-                                                                                                           implements InitializingBean
+public aspect SpringAwareDependencyInjectionAspect extends AbstractDependencyInjectionAspect implements InitializingBean
 {
    public void afterPropertiesSet() throws Exception
    {

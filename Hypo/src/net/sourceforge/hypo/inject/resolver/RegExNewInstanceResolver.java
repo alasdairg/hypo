@@ -33,15 +33,15 @@ import net.sourceforge.hypo.inject.dependency.Dependency;
  * should be a singleton - i.e. after initial creation, the same instance will
  * be used whenever a dependency of that type is matched by the same mapping 
  */
-public class RegExNewInstanceResolver implements DependencyResolver
+public class RegExNewInstanceResolver extends AbstractDependencyResolver
 {
    
    private RegExMapper mapper;
-   private Map<Class,Object> singletons;
+   private Map<Class<?>,Object> singletons;
    
    public RegExNewInstanceResolver()
    {
-      singletons = new HashMap<Class,Object>();
+      singletons = new HashMap<Class<?>,Object>();
    }
    
    public RegExNewInstanceResolver( String pattern )
@@ -69,7 +69,7 @@ public class RegExNewInstanceResolver implements DependencyResolver
       setPatternMappings( patternMappings );
    }
    
-   public boolean resolve( Dependency dep, Object target )
+   public ResolutionResult doResolve( Dependency dep, Object target )
    {
       boolean singleton = false;;
       String mappedClassName = mapper.getMappedString( dep.getType() );                  
@@ -81,16 +81,15 @@ public class RegExNewInstanceResolver implements DependencyResolver
             singleton = true;
          }
       
-         Class mappedClass = createClass( mappedClassName );
+         Class<?> mappedClass = createClass( mappedClassName );
          Object obj = getInstance( mappedClass, singleton );
-         dep.injectValue( target, obj );         
-         return true;
+         return ResolutionResult.resolved(obj);
       }
       else
-         return false;
+         return ResolutionResult.couldNotResolve();
    }
 
-   private Class createClass( String className )
+   private Class<?> createClass( String className )
    {
       try
       {
@@ -102,7 +101,7 @@ public class RegExNewInstanceResolver implements DependencyResolver
       }     
    }
    
-   private Object getInstance( Class clazz, boolean singleton )
+   private Object getInstance( Class<?> clazz, boolean singleton )
    {
       Object retval = null;
       if ( singleton )
@@ -120,7 +119,7 @@ public class RegExNewInstanceResolver implements DependencyResolver
       return retval;
    }
 
-   private Object createNewInstance( Class clazz )
+   private Object createNewInstance( Class<?> clazz )
    {
       try
       {

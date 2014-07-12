@@ -15,7 +15,13 @@
 
 package net.sourceforge.hypo.inject.dependency;
 
+/**
+ * Implementations of this interface know how to create Dependency objects
+ * based on the passed-in object
+ * @param obj An object representing an underlying dependency
+ * @param name A name to be associated with the dependency (optional) 
+ */
 public interface DependencyFactory 
 {
-   Dependency createDependency( Object obj, String name );
+   Dependency createDependency(Object obj, String name );
 }

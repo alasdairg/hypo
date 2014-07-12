@@ -16,9 +16,11 @@
 package net.sourceforge.hypo.inject.resolver;
 
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import net.sourceforge.hypo.inject.dependency.Dependency;
 
-import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
@@ -29,9 +31,9 @@ import org.springframework.context.ApplicationContextAware;
  * A Spring-aware DependencyResolver that looks up the Spring ApplicationContext to find the single bean
  * which has the name specified by the Dependency
  */
-public class NamedSpringBeanResolver implements DependencyResolver, ApplicationContextAware
+public class NamedSpringBeanResolver extends AbstractDependencyResolver implements ApplicationContextAware
 {      
-   private static Logger log = Logger.getLogger( NamedSpringBeanResolver.class );
+   private static Logger log = Logger.getLogger( NamedSpringBeanResolver.class.getCanonicalName() );
    
    private ApplicationContext applicationContext;
    
@@ -43,25 +45,22 @@ public class NamedSpringBeanResolver implements DependencyResolver, ApplicationC
     * @return true if a bean with the required name existed in the context; false if no suitable 
     * bean was found
     */
-   public boolean resolve( Dependency dep, Object target )
+   public ResolutionResult doResolve( Dependency dep, Object target )
    {  
-      boolean retval = false;
       String name = dep.getAssociatedName();
       
       try
       {
          Object bean = applicationContext.getBean( name, dep.getType() );      
-         if ( log.isDebugEnabled() )
-            log.debug( "Found bean named \"" + name + "\" to inject for dependency " + dep + "." );
-         dep.injectValue( target, bean );
-         
-         retval = true;
+         if ( log.isLoggable(Level.FINE) )
+            log.fine( "Found bean named \"" + name + "\" to inject for dependency " + dep + "." );
+         return ResolutionResult.resolved(bean);
       }
       catch( NoSuchBeanDefinitionException nsbe )
       {
-         //Drop out with false
+         //Drop out with "could not resolve" result
       }
-      return retval;
+      return ResolutionResult.couldNotResolve();
    }
 
    public void setApplicationContext( ApplicationContext applicationContext ) throws BeansException

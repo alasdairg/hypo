@@ -41,5 +41,5 @@ public interface InjectionStrategy
     * @throws UnresolvedDependenciesException if the object was eligible for dependency injection, 
     * but the implementation was unable to resolve all of those dependencies.
     */
-   public abstract boolean performInjection( Object obj, Class clazz ) throws UnresolvedDependenciesException;
+   public abstract boolean performInjection( Object obj, Class<?> clazz ) throws UnresolvedDependenciesException;
 }

@@ -17,11 +17,11 @@ package net.sourceforge.hypo.inject.dependency;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.sourceforge.hypo.InjectionAware;
 import net.sourceforge.hypo.inject.Utils;
-
-import org.apache.log4j.Logger;
 
 /**
  * A Dependency implementation representing a "simple" setter method. i.e. a setter
@@ -29,35 +29,56 @@ import org.apache.log4j.Logger;
  */
 public class SimpleSetterDependency implements Dependency
 {
-   private static Logger log = Logger.getLogger( SimpleSetterDependency.class );
-   
-   
+   private static Logger log = Logger.getLogger( SimpleSetterDependency.class.getCanonicalName() );
+  
    private Method setter;
-   private String beanName = "";
+   private String name = "";
    
-   public SimpleSetterDependency( Method setter, String beanName )
+   /**
+    * Constructor
+    * @param field a java.lang.reflect.Method that has been identified as a dependency
+    * @param name an optional name for the dependency
+    */
+   public SimpleSetterDependency( Method setter, String name )
    {
       this.setter = setter;
       this.setter.setAccessible( true );
-      if ( beanName != null )
-         this.beanName = beanName;
+      if ( name != null )
+         this.name = name;
    }
    
+   /**
+    * @return the associated name
+    */
    public String getAssociatedName()
    {
-      return beanName;
+      return name;
    }
 
+   /**
+    * @return the underlying java.lang.reflect.Method itself
+    */
    public Member getMember()
    {
       return setter;
    }
    
-   public Class getType()
+   /**
+    * @return the type of the setter method's single parameter
+    */
+   public Class<?> getType()
    {
       return setter.getParameterTypes()[0];
    }
    
+   /**
+    * Use reflection to satisfy the Dependency for 'targetObject' by reflectively
+    * invoking the setter method and passing 'toInject' as its single parameter
+    * 
+    * @param targetObject the Object whose dependency is being satisfied
+    * @param toInject an object of the appropriate type that is being injected
+    * to satisfy the dependency
+    */
    public void injectValue( Object targetObject, Object toInject )
    {
       try
@@ -67,8 +88,8 @@ public class SimpleSetterDependency implements Dependency
             ( (InjectionAware) toInject ).beforeInjection( targetObject, this );            
          }
          setter.invoke( targetObject, new Object[] { toInject } );
-         if ( log.isDebugEnabled() )
-            log.debug( "Called " + this + " on [" + Utils.getName( targetObject ) + "] with value [" + toInject + "]." );
+         if ( log.isLoggable(Level.FINE) )
+            log.fine( "Called " + this + " on [" + Utils.getName( targetObject ) + "] with value [" + toInject + "]." );
       }
       catch( Exception e )
       {
@@ -82,10 +103,10 @@ public class SimpleSetterDependency implements Dependency
       buff.append( "[Setter " );
       buff.append( setter.getName() );
       buff.append( "()" ); 
-      if ( beanName != null && beanName.length() > 0 )
+      if ( name != null && name.length() > 0 )
       {
          buff.append( " @\"" );
-         buff.append( beanName );
+         buff.append( name );
          buff.append( "\"" );
       }
       buff.append( ']' );

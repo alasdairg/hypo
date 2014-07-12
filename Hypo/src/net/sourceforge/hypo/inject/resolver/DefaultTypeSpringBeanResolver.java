@@ -16,10 +16,11 @@
 package net.sourceforge.hypo.inject.resolver;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.sourceforge.hypo.inject.dependency.Dependency;
 
-import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.context.ApplicationContext;
@@ -30,9 +31,9 @@ import org.springframework.context.ApplicationContextAware;
  * A Spring-aware DependencyResolver that looks up the Spring ApplicationContext to find the single bean
  * which has the same type as or is a subclass of the Dependency's type
  */
-public class DefaultTypeSpringBeanResolver implements DependencyResolver, ApplicationContextAware
+public class DefaultTypeSpringBeanResolver extends AbstractDependencyResolver implements ApplicationContextAware
 {
-   private static Logger log = Logger.getLogger( DefaultTypeSpringBeanResolver.class );
+   private static Logger log = Logger.getLogger( DefaultTypeSpringBeanResolver.class.getCanonicalName() );
    
    private ApplicationContext applicationContext;
    
@@ -46,15 +47,14 @@ public class DefaultTypeSpringBeanResolver implements DependencyResolver, Applic
     * @throws RuntimeException if more than one bean in the Spring ApplicationContext matched
     * the Dependency
     */
-   public boolean resolve( Dependency dep, Object target )
+   public ResolutionResult doResolve( Dependency dep, Object target )
    {
-      boolean retval = false;
-      Class type = dep.getType();
-      Map map = BeanFactoryUtils.beansOfTypeIncludingAncestors( applicationContext, type );
+      Class<?> type = dep.getType();
+      Map<?, ?> map = BeanFactoryUtils.beansOfTypeIncludingAncestors( applicationContext, type );
       if ( map.size() < 1 )
       {
-    	 if ( log.isDebugEnabled() )
-            log.debug( "No beans of required type found for dependency " + dep + ". Skipping." );
+    	 if ( log.isLoggable(Level.FINE) )
+            log.fine( "No beans of required type found for dependency " + dep + ". Skipping." );
       }
       else if ( map.size() > 1 )
       {         
@@ -63,12 +63,11 @@ public class DefaultTypeSpringBeanResolver implements DependencyResolver, Applic
       else
       {
          Object bean = map.values().iterator().next();
-         if ( log.isDebugEnabled() )
-            log.debug( "Found bean [" + bean + "] to inject for dependency " + dep + "." );
-         dep.injectValue( target, bean );         
-         retval = true;
+         if ( log.isLoggable(Level.FINE) )
+            log.fine( "Found bean [" + bean + "] to inject for dependency " + dep + "." );
+         return ResolutionResult.resolved(bean);
       }
-      return retval;
+      return ResolutionResult.couldNotResolve();
    }
    
    public void setApplicationContext( ApplicationContext applicationContext ) throws BeansException

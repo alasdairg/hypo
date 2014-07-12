@@ -15,7 +15,8 @@
 
 package net.sourceforge.hypo.azpect;
 
-import org.apache.log4j.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.sourceforge.hypo.DI;
 import net.sourceforge.hypo.DependencyInjector;
@@ -28,7 +29,7 @@ import net.sourceforge.hypo.inject.Utils;
  */
 public abstract aspect AbstractDependencyInjectionAspect implements DependencyInjector
 {
-   private Logger log = Logger.getLogger( AbstractDependencyInjectionAspect.class );
+   private Logger log = Logger.getLogger( AbstractDependencyInjectionAspect.class.getCanonicalName() );
    
    private interface DeserializationSupport {};    
    
@@ -44,7 +45,10 @@ public abstract aspect AbstractDependencyInjectionAspect implements DependencyIn
                             
    public Object DeserializationSupport.readResolve() throws java.io.ObjectStreamException
    {
-      DI.getDependencyInjector().inject( this );
+      DependencyInjector di = DI.getCurrentlyRunningDependencyInjector();
+      if (di != null) {
+         di.inject( this );
+      }
       return this;
    }   
    
@@ -68,15 +72,15 @@ public abstract aspect AbstractDependencyInjectionAspect implements DependencyIn
     * of its superclasses/superinterfaces */
    before( Object obj ): instantiatingCandidateObject( obj )
    { 
-	   if ( log.isDebugEnabled() )
-         log.debug( "Intercepted creation of candidate object [" + Utils.getName( obj ) + "]." );
+	   if ( log.isLoggable(Level.FINE) )
+         log.fine( "Intercepted creation of candidate object [" + Utils.getName( obj ) + "]." );
       inject( obj, thisJoinPointStaticPart.getSignature().getDeclaringType() );
    }
    
    after( Object obj ): deserializingCandidateObject( obj )
    {
-	   if ( log.isDebugEnabled() )
-         log.debug( "Intercepted deserialization of candidate object [" + Utils.getName( obj.getClass() ) + "]." );
+	   if ( log.isLoggable(Level.FINE) )
+         log.fine( "Intercepted deserialization of candidate object [" + Utils.getName( obj.getClass() ) + "]." );
       inject( obj );
    }
    
@@ -89,13 +93,13 @@ public abstract aspect AbstractDependencyInjectionAspect implements DependencyIn
          String name = Utils.getName( obj );
          if ( processed )
          {
-        	if ( log.isDebugEnabled() )
-               log.debug( "Successfully injected dependencies into object [" + name + "]." );
+        	if ( log.isLoggable(Level.FINE) )
+               log.fine( "Successfully injected dependencies into object [" + name + "]." );
          }
          else
          {
-        	 if ( log.isDebugEnabled() ) 
-               log.debug( "No dependencies were injected into object [" + name + "]." );
+        	 if ( log.isLoggable(Level.FINE) ) 
+               log.fine( "No dependencies were injected into object [" + name + "]." );
          }
       }  
    }
@@ -108,9 +112,9 @@ public abstract aspect AbstractDependencyInjectionAspect implements DependencyIn
          
          String name = Utils.getName( obj );
          if ( processed )
-            log.debug( "Successfully injected dependencies into object [" + name + "]." );
+            log.fine( "Successfully injected dependencies into object [" + name + "]." );
          else
-            log.debug( "No dependencies were injected into object [" + name + "]." );
+            log.fine( "No dependencies were injected into object [" + name + "]." );
       }  
    }      
    
@@ -126,7 +130,13 @@ public abstract aspect AbstractDependencyInjectionAspect implements DependencyIn
    
    public void ready()
    {
-	   mInitialised = true;
+       DI.started(this);
+       mInitialised = true;   
+   }
+   
+   public void stop() {
+       mInitialised = false;
+       DI.stopped(this);
    }
    
    private InjectionStrategy mInjectionStrategy;

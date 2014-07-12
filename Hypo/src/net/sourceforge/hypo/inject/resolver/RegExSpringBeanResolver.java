@@ -16,34 +16,34 @@
 package net.sourceforge.hypo.inject.resolver;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.sourceforge.hypo.inject.dependency.Dependency;
 
-import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-public class RegExSpringBeanResolver implements DependencyResolver, ApplicationContextAware
+public class RegExSpringBeanResolver extends AbstractDependencyResolver implements ApplicationContextAware
 {
-   private static Logger log = Logger.getLogger( RegExSpringBeanResolver.class );
+   private static Logger log = Logger.getLogger( RegExSpringBeanResolver.class.getCanonicalName() );
    
    private ApplicationContext applicationContext;
    private RegExMapper mapper;
    
-   public boolean resolve( Dependency dep, Object target )
+   public ResolutionResult doResolve( Dependency dep, Object target )
    {
       String beanName = mapper.getMappedString( dep.getType() );
       if ( beanName != null )
       {
          Object bean = applicationContext.getBean( beanName, dep.getType() );
-         dep.injectValue( target, bean );
-         if ( log.isDebugEnabled() )
-            log.debug( "Found bean [" + bean + "] to inject for dependency " + dep + "." );
-         return true;
+         if ( log.isLoggable(Level.FINE) )
+            log.fine( "Found bean [" + bean + "] to inject for dependency " + dep + "." );
+         return ResolutionResult.resolved(bean);
       }
       else
-         return false;
+         return ResolutionResult.couldNotResolve();
    }
    
    public void setApplicationContext( ApplicationContext applicationContext ) throws BeansException

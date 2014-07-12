@@ -17,14 +17,41 @@ package net.sourceforge.hypo;
 
 import java.lang.reflect.Method;
 
+import net.sourceforge.hypo.inject.AbstractInjectionStrategy;
+import net.sourceforge.hypo.inject.AnnotationInjectionStrategy;
+import net.sourceforge.hypo.inject.InjectionStrategy;
+import net.sourceforge.hypo.inject.resolver.DependencyResolver;
+import net.sourceforge.hypo.inject.resolver.SimpleTypeMappingResolver;
+
 /**
  * Convenience class for acquiring a reference to the DependencyInjector.
  * Useful if configuration is being performed outside of Spring
  */
 public final class DI
-{
+{ 
+   private static DependencyInjector currentlyRunningDependencyInjector;
+    
    private DI()
    {      
+   }
+
+   public static void started(DependencyInjector di) {
+       if (currentlyRunningDependencyInjector != null && currentlyRunningDependencyInjector != di) {
+           throw new IllegalStateException("A DependencyInjector is already running. Please stop it first");
+       }
+       currentlyRunningDependencyInjector = di;
+   }
+   
+   public static void stopped(DependencyInjector di) {
+       if (currentlyRunningDependencyInjector != null && currentlyRunningDependencyInjector == di) {
+           currentlyRunningDependencyInjector = null;    
+       } else {
+           throw new IllegalStateException("A different DependencyInjector is running!");
+       }
+   }
+   
+   public static DependencyInjector getCurrentlyRunningDependencyInjector() {
+       return currentlyRunningDependencyInjector;
    }
    
    /**
@@ -33,17 +60,35 @@ public final class DI
     * code. Makes it easier to configure and use the aspect outside of a
     * Spring container if required.
     */
-   public static DependencyInjector getDependencyInjector()
+   private static DependencyInjector getStandardDependencyInjector()
    {
       try
       {
-         Class clazz = Class.forName( "net.sourceforge.hypo.azpect.SpringAwareDependencyInjectionAspect" );
-         Method method = clazz.getMethod( "aspectOf", new Class[] {} );
+         Class<?> clazz = Class.forName( "net.sourceforge.hypo.azpect.DependencyInjectionAspect" );
+         Method method = clazz.getMethod( "aspectOf", new Class<?>[] {} );
          return (DependencyInjector) method.invoke(  null );
       }
       catch( Throwable t )
       {
          throw new RuntimeException( t );
       }
+   }
+   
+   public static void initializeSimpleAnnotationDependencyInjection(DependencyResolver resolver) {      
+       AbstractInjectionStrategy strategy = new AnnotationInjectionStrategy();
+       strategy.setDependencyResolver(resolver);
+       initializeStandardDependencyInjection(strategy);
+   }
+   
+   public static SimpleTypeMappingResolver initializeSimpleAnnotationDependencyInjection() {	      
+	   SimpleTypeMappingResolver resolver = new SimpleTypeMappingResolver();
+	   initializeSimpleAnnotationDependencyInjection(resolver);
+	   return resolver;
+   }
+   
+   public static void initializeStandardDependencyInjection(InjectionStrategy strategy) {
+       DependencyInjector di = getStandardDependencyInjector();
+       di.setInjectionStrategy(strategy);
+       di.ready();
    }
 }

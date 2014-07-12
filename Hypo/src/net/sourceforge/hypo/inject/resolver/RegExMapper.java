@@ -30,7 +30,7 @@ public class RegExMapper
       init( patterns );   
    }
    
-   public String getMappedString( Class clazz )
+   public String getMappedString( Class<?> clazz )
    {
       for ( Mapping mapping: mappings )
       {
@@ -63,14 +63,14 @@ public class RegExMapper
          template = x[1].trim();
       }      
       
-      public String getMappedString( Class clazz )
+      public String getMappedString( Class<?> clazz )
       {
          String mapsTo = null;
          String toMatch = clazz.getName();         
          Matcher matcher = pattern.matcher( toMatch );         
          if ( matcher.matches() )
          {
-            String[] groups = new String[ matcher.groupCount() ];
+            Object[] groups = new String[ matcher.groupCount() ];
             for ( int i = 0; i < groups.length; i++ )
                groups[i] = matcher.group( i + 1 );
             mapsTo = MessageFormat.format( template, groups );            

@@ -47,7 +47,7 @@ public class CompositeInjectionStrategy implements InjectionStrategy
       return retval;
    }
    
-   public boolean performInjection( Object obj, Class clazz ) throws UnresolvedDependenciesException
+   public boolean performInjection( Object obj, Class<?> clazz ) throws UnresolvedDependenciesException
    {
      boolean retval = false;
       for ( InjectionStrategy strat: strategies )

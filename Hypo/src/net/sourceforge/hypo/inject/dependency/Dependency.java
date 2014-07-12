@@ -28,14 +28,15 @@ public interface Dependency
    /**
     * @return the name associated with the dependency (not the name of any actual
     * underlying member, but a name that has been explicitly associated with the dependency 
-    * to potentially guide InjectionStrategies in their determination of a value to inject
+    * to potentially guide InjectionStrategies in their determination of a value to inject)
     */
    String getAssociatedName();
    
    /**
-    * @return the type of object that is required to satisfy this dependency
+    * @return the type of object that is required to satisfy this dependency.
+    * (NB a subtype of this type is also perfectly valid for satisfying the dependency)
     */
-   Class getType();
+   Class<?> getType();
    
    /**
     * @return the underlying java.lang.reflect.Member if this Dependency represents
@@ -45,9 +46,11 @@ public interface Dependency
    Member getMember();
    
    /**
-    * Satisfy the dependency for the specfied target object by injecting a real value
+    * Satisfy the dependency for the specfied target object by injecting a real value.
     * @param targetObject the object whose dependency is to be satisfied
-    * @param toInject the object to be injected to satisfy the target object's dependency
+    * @param toInject the object to be injected to satisfy the target object's dependency.
+    * NB this object MUST be type assignable to the dependency's type or a runtime error
+    * will occur.
     */
-   void injectValue( Object targetObject, Object toInject );
+    void injectValue( Object targetObject, Object toInject );
 }

@@ -41,15 +41,15 @@ public class SpecifiedMemberInjectionStrategy extends AbstractInjectionStrategy
     * NB this includes members which are declared anywhere in the inheritance hierarchy
     * of the candidate's class
     */
-   public List<Dependency> selectDependencies( Class clazz )
+   public List<Dependency> selectDependencies( Class<?> clazz )
    {
-      List<Dependency> applicableMembers = Collections.EMPTY_LIST;
+      List<Dependency> applicableMembers = Collections.emptyList();
       for ( Dependency im: specifiedMembers )
       {
          Member member = im.getMember();
          if ( member != null && member.getDeclaringClass().isAssignableFrom( clazz ) )
          {
-        	if ( applicableMembers.equals( Collections.EMPTY_LIST ) )
+        	if ( applicableMembers.isEmpty() )
         		applicableMembers = new ArrayList<Dependency>();
             applicableMembers.add( im );
          }
@@ -75,7 +75,7 @@ public class SpecifiedMemberInjectionStrategy extends AbstractInjectionStrategy
          int index = str.lastIndexOf( '.' );
          String className = str.substring( 0, index );
          String memberName = str.substring( index + 1 );
-         Class clazz = createClass( className );
+         Class<?> clazz = createClass( className );
          if ( memberName.endsWith( "()" ) )
          {
             memberName = memberName.substring( 0, memberName.lastIndexOf( "()" )  );
@@ -89,7 +89,7 @@ public class SpecifiedMemberInjectionStrategy extends AbstractInjectionStrategy
       }
    }
    
-   private static Field findField( Class clazz, String name )
+   private static Field findField( Class<?> clazz, String name )
    {
       try
       {
@@ -101,7 +101,7 @@ public class SpecifiedMemberInjectionStrategy extends AbstractInjectionStrategy
       }
    }
    
-   private static Method findSimpleSetterMethod( Class clazz, String name )
+   private static Method findSimpleSetterMethod( Class<?> clazz, String name )
    {
       Method[] methods = clazz.getDeclaredMethods();
       for ( Method method: methods )
@@ -116,9 +116,9 @@ public class SpecifiedMemberInjectionStrategy extends AbstractInjectionStrategy
       throw new RuntimeException( "Could not find simple setter method " + name + " on class " + clazz );
    }
    
-   private static Class createClass( String name )
+   private static Class<?> createClass( String name )
    {
-      Class retval = null;
+      Class<?> retval = null;
       try
       {
          retval = Class.forName( name );
